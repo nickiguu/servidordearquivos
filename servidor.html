@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt</title>
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #7CFC00;
+      font-family: 'Consolas', monospace;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .terminal {
+      width: 90%;
+      max-width: 800px;
+      background-color: #000;
+      border: 1px solid #7CFC00;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 0 10px #7CFC00;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .input-line {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    textarea {
+      background-color: #000;
+      color: #7CFC00;
+      border: 1px solid #7CFC00;
+      border-radius: 4px;
+      padding: 10px;
+      resize: none;
+      height: 100px;
+      font-family: inherit;
+    }
+
+    input[type="file"] {
+      color: #7CFC00;
+      font-family: inherit;
+    }
+
+    button {
+      background: transparent;
+      border: 1px solid #7CFC00;
+      color: #7CFC00;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    button:hover {
+      background-color: #7CFC00;
+      color: #000;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .output {
+      margin-top: 20px;
+      border-top: 1px solid #7CFC00;
+      padding-top: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .item {
+      border-bottom: 1px dashed #7CFC00;
+      padding: 8px 0;
+    }
+
+    .item small {
+      color: #98fb98;
+    }
+
+    a {
+      color: #00ffff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #7CFC00;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="terminal">
+    <div class="input-line">
+      <textarea id="textInput" placeholder="> Digite aqui e pressione Enter..."></textarea>
+      <input type="file" id="fileInput" />
+      <div class="btn-group">
+        <button id="saveBtn">> Salvar</button>
+        <button id="clearBtn">> Lixeira</button>
+      </div>
+    </div>
+
+    <div id="output" class="output"></div>
+  </div>
+
+  <script>
+    const textInput = document.getElementById("textInput");
+    const fileInput = document.getElementById("fileInput");
+    const saveBtn = document.getElementById("saveBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const output = document.getElementById("output");
+
+    let itens = JSON.parse(localStorage.getItem("itensPrompt")) || [];
+
+    function renderItens() {
+      output.innerHTML = "";
+      itens.forEach((item) => {
+        const div = document.createElement("div");
+        div.className = "item";
+
+        let conteudo = "";
+        if (item.texto) conteudo += `<p>> ${item.texto}</p>`;
+        if (item.arquivoURL) conteudo += `<a href="${item.arquivoURL}" target="_blank">[abrir arquivo]</a>`;
+        conteudo += `<br><small>${item.data}</small>`;
+
+        div.innerHTML = conteudo;
+        output.appendChild(div);
+      });
+    }
+
+    async function salvarItem() {
+      const texto = textInput.value.trim();
+      const file = fileInput.files[0];
+      let arquivoURL = null;
+
+      if (!texto && !file) return;
+
+      if (file) {
+        arquivoURL = URL.createObjectURL(file);
+      }
+
+      const novoItem = {
+        texto,
+        arquivoURL,
+        data: new Date().toLocaleString(),
+      };
+
+      itens.unshift(novoItem);
+      localStorage.setItem("itensPrompt", JSON.stringify(itens));
+
+      textInput.value = "";
+      fileInput.value = "";
+      renderItens();
+    }
+
+    // Botão salvar
+    saveBtn.addEventListener("click", salvarItem);
+
+    // Enter para enviar
+    textInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        salvarItem();
+      }
+    });
+
+    // Lixeira
+    clearBtn.addEventListener("click", () => {
+      if (confirm("Tem certeza que deseja apagar tudo?")) {
+        itens = [];
+        localStorage.removeItem("itensPrompt");
+        renderItens();
+      }
+    });
+
+    renderItens();
+  </script>
+</body>
+</html>
